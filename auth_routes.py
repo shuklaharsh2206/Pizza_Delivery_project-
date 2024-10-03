@@ -127,3 +127,28 @@ async def refresh_token(Authrize:AuthJWT=Depends()):
     current_user = Authrize.get_jwt_subject()
     access_token=Authrize.create_access_token(subject=current_user)
     return {'access':access_token,}
+
+
+@auth_router.delete('/delete/user/{id}',status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(id:int,Authrize:AuthJWT=Depends()):
+    """ 
+        ##  DELETE ORDER
+        This route is used to delete an order by its ID.
+        
+    """
+    try:
+        Authrize.jwt_required()
+    except Exception as e:
+        raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED,detail="Invalid Token ")
+    username=Authrize.get_jwt_subject()
+    current_user=session.query(User).filter(User.username==username).first()
+    if current_user.is_staff:
+        user_to_delete=session.query(User).filter(User.id==id).first()
+        if user_to_delete.is_staff:
+            raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST,detail="You are not delete another Super User ") 
+            
+        session.delete(user_to_delete)
+        session.commit()
+        return user_to_delete
+    raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST,detail="You are not Autherized to delete any User ")  
+    

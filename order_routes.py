@@ -211,9 +211,12 @@ async def delete_an_order(id:int,Authrize:AuthJWT=Depends()):
         Authrize.jwt_required()
     except Exception as e:
         raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED,detail="Invalid Token ")
+    username=Authrize.get_jwt_subject()
+    current_user=session.query(User).filter(User.username==username).first()
     order_to_delete=session.query(Order).filter(Order.id==id).first()
-    session.delete(order_to_delete)
-    session.commit()
-    return order_to_delete
-    
+    if order_to_delete.user_id==current_user.id:
+        session.delete(order_to_delete)
+        session.commit()
+        return order_to_delete
+    raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST,detail="You can only Delete your order ")  
     
